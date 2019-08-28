@@ -115,20 +115,16 @@ module Fluent::Plugin
     end
 
     def start
-      openstack_config = {
-        provider: 'OpenStack',
-        openstack_auth_url: auth_url,
-        openstack_username: auth_user,
-        openstack_api_key: auth_api_key,
-        openstack_tenant: auth_tenant,
-        openstack_region: auth_region
-      }
-
-      log.warn openstack_config.inspect.to_s
-
       Excon.defaults[:ssl_verify_peer] = ssl_verify
       begin
-        self.storage = Fog::Storage.new(openstack_config)
+        self.storage = Fog::Storage.new(
+          provider: 'OpenStack',
+          openstack_auth_url: auth_url,
+          openstack_username: auth_user,
+          openstack_api_key: auth_api_key,
+          openstack_tenant: auth_tenant,
+          openstack_region: auth_region
+        )
       rescue StandardError => e
         raise "Can't call Swift API. Please check your ENV OS_*, your credentials or auth_url configuration. Error: #{e.inspect}"
       end
@@ -177,10 +173,10 @@ module Fluent::Plugin
         swift_path = swift_path.gsub(/%{[^}]+}/, values_for_swift_object_key_post)
         if i.positive? && (swift_path == previous_path)
           if overwrite
-            log.warn "#{swift_path} already exists, but will overwrite"
+            log.warn "File: #{swift_path} already exists, but will overwrite!"
             break
           else
-            raise "duplicated path is generated. use %{index} in swift_object_key_format: path = #{swift_path}"
+            raise "Duplicated path is generated. Use %{index} in swift_object_key_format: Path: #{swift_path}"
           end
         end
 
