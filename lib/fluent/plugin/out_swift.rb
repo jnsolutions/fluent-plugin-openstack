@@ -25,13 +25,7 @@ module Fluent::Plugin
     config_param :auth_user, :string
     desc "Authentication Key (Password). Set a value or use `#{ENV['OS_PASSWORD']}`"
     config_param :auth_api_key, :string
-    # Identity v2
     config_param :auth_tenant, :string, default: nil
-    # Identity v3
-    desc "Authentication Project. Set a value or use `#{ENV['OS_PROJECT_NAME']}`"
-    config_param :project_name, :string, default: nil
-    desc "Authentication Domain. Set a value or use `#{ENV['OS_PROJECT_DOMAIN_NAME']}`"
-    config_param :domain_name, :string, default: nil
     desc "Authentication Region. Optional, not required if there is only one region available. Set a value or use `#{ENV['OS_REGION_NAME']}`"
     config_param :auth_region, :string, default: nil
     config_param :swift_account, :string, default: nil
@@ -87,13 +81,6 @@ module Fluent::Plugin
         raise Fluent::ConfigError, 'auth_api_key parameter or OS_PASSWORD variable not defined'
       end
 
-      if project_name.blank?
-        raise Fluent::ConfigError, 'project_name parameter or OS_PROJECT_NAME variable not defined'
-      end
-      if domain_name.blank?
-        raise Fluent::ConfigError, 'domain_name parameter or OS_PROJECT_DOMAIN_NAME variable not defined'
-      end
-
       self.ext, self.mime_type = case store_as
                                  when 'gzip' then ['gz', 'application/x-gzip']
                                  when 'lzo' then
@@ -137,8 +124,6 @@ module Fluent::Plugin
           openstack_username: auth_user,
           openstack_api_key: auth_api_key,
           openstack_tenant: auth_tenant,
-          openstack_project_name: project_name,
-          openstack_domain_name: domain_name,
           openstack_region: auth_region
         )
       rescue StandardError => e
@@ -151,6 +136,7 @@ module Fluent::Plugin
 
     # TODO: dead method?
     def format(tag, time, record)
+      log.warn "Method: `format(tag, time, record)` is NOT dead!"
       r = inject_values_to_record(tag, time, record)
       formatter.format(tag, time, r)
     end
@@ -185,7 +171,7 @@ module Fluent::Plugin
 
         swift_path = extract_placeholders(swift_path, metadata)
         swift_path = swift_path.gsub(/%{[^}]+}/, values_for_swift_object_key_post)
-        if (i > 0) && (swift_path == previous_path)
+        if i.positive? && (swift_path == previous_path)
           if overwrite
             log.warn "#{swift_path} already exists, but will overwrite"
             break
