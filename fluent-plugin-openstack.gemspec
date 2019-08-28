@@ -17,6 +17,7 @@ Gem::Specification.new do |gem|
   gem.executables = `git ls-files -- bin/*`.split("\n").map { |f| File.basename(f) }
   gem.require_paths = ['lib']
 
+  gem.add_runtime_dependency 'activesupport'
   gem.add_runtime_dependency 'fluentd', ['>= 0.14.2', '< 2']
   gem.add_runtime_dependency 'fog-openstack'
   gem.add_runtime_dependency 'uuidtools'

@@ -7,6 +7,7 @@ require 'zlib'
 require 'time'
 require 'tempfile'
 require 'open3'
+require 'active_support/all'
 
 module Fluent::Plugin
   class SwiftOutput < Output
@@ -140,12 +141,10 @@ module Fluent::Plugin
           openstack_domain_name: domain_name,
           openstack_region: auth_region
         )
-      rescue StandardError => exp
-        raise "Can't call Swift API. Please check your ENV OS_*, your credentials or auth_url configuration. Error: #{exp.inspect}"
+      rescue StandardError => e
+        raise "Can't call Swift API. Please check your ENV OS_*, your credentials or auth_url configuration. Error: #{e.inspect}"
       end
-      if swift_account
-        storage.change_account(swift_account)
-      end
+      storage.change_account(swift_account) if swift_account
       check_container
       super
     end
@@ -303,12 +302,10 @@ module Fluent::Plugin
     end
 
     def check_object_exists(object:)
-      begin
-        storage.head_object(swift_container, object)
-        true
-      rescue Fog::OpenStack::Storage::NotFound
-        false
-      end
+      storage.head_object(swift_container, object)
+      true
+    rescue Fog::OpenStack::Storage::NotFound
+      false
     end
   end
 end
