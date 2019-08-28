@@ -76,20 +76,20 @@ module Fluent::Plugin
 
       super
 
-      if auth_url.empty?
+      if auth_url.blank?
         raise Fluent::ConfigError, 'auth_url parameter or OS_AUTH_URL variable not defined'
       end
-      if auth_user.empty?
+      if auth_user.blank?
         raise Fluent::ConfigError, 'auth_user parameter or OS_USERNAME variable not defined'
       end
-      if auth_api_key.empty?
+      if auth_api_key.blank?
         raise Fluent::ConfigError, 'auth_api_key parameter or OS_PASSWORD variable not defined'
       end
 
-      if project_name.empty?
+      if project_name.blank?
         raise Fluent::ConfigError, 'project_name parameter or OS_PROJECT_NAME variable not defined'
       end
-      if domain_name.empty?
+      if domain_name.blank?
         raise Fluent::ConfigError, 'domain_name parameter or OS_PROJECT_DOMAIN_NAME variable not defined'
       end
 
