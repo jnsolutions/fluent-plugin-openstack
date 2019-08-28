@@ -7,7 +7,6 @@ require 'zlib'
 require 'time'
 require 'tempfile'
 require 'open3'
-require 'active_support/all'
 
 module Fluent::Plugin
   class SwiftOutput < Output
@@ -71,13 +70,13 @@ module Fluent::Plugin
 
       super
 
-      if auth_url.blank?
+      if auth_url.empty?
         raise Fluent::ConfigError, 'auth_url parameter or OS_AUTH_URL variable not defined'
       end
-      if auth_user.blank?
+      if auth_user.empty?
         raise Fluent::ConfigError, 'auth_user parameter or OS_USERNAME variable not defined'
       end
-      if auth_api_key.blank?
+      if auth_api_key.empty?
         raise Fluent::ConfigError, 'auth_api_key parameter or OS_PASSWORD variable not defined'
       end
 
@@ -116,16 +115,20 @@ module Fluent::Plugin
     end
 
     def start
+      openstack_config = {
+        provider: 'OpenStack',
+        openstack_auth_url: auth_url,
+        openstack_username: auth_user,
+        openstack_api_key: auth_api_key,
+        openstack_tenant: auth_tenant,
+        openstack_region: auth_region
+      }
+
+      log.warn openstack_config.inspect.to_s
+
       Excon.defaults[:ssl_verify_peer] = ssl_verify
       begin
-        self.storage = Fog::Storage.new(
-          provider: 'OpenStack',
-          openstack_auth_url: auth_url,
-          openstack_username: auth_user,
-          openstack_api_key: auth_api_key,
-          openstack_tenant: auth_tenant,
-          openstack_region: auth_region
-        )
+        self.storage = Fog::Storage.new(openstack_config)
       rescue StandardError => e
         raise "Can't call Swift API. Please check your ENV OS_*, your credentials or auth_url configuration. Error: #{e.inspect}"
       end
@@ -136,7 +139,7 @@ module Fluent::Plugin
 
     # TODO: dead method?
     def format(tag, time, record)
-      log.warn "Method: `format(tag, time, record)` is NOT dead!"
+      log.warn 'Method: `format(tag, time, record)` is NOT dead!'
       r = inject_values_to_record(tag, time, record)
       formatter.format(tag, time, r)
     end
