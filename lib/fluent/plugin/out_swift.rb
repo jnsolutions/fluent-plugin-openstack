@@ -154,7 +154,7 @@ module Fluent::Plugin
                      time_slice_with_tz.call(metadata.timekey)
                    end
 
-      while check_object_exists(object: swift_path)
+      begin
         values_for_swift_object_chunk[chunk.unique_id] ||= {
           '%{hex_random}' => hex_random(chunk: chunk)
         }
@@ -185,7 +185,7 @@ module Fluent::Plugin
 
         i += 1
         previous_path = swift_path
-      end
+      end while check_object_exists(object: swift_path)
 
       tmp = Tempfile.new('swift-')
       tmp.binmode
