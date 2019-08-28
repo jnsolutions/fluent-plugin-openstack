@@ -134,12 +134,16 @@ module Fluent::Plugin
       Excon.defaults[:ssl_verify_peer] = @ssl_verify
 
       begin
-        @storage = Fog::OpenStack::Storage.new(openstack_auth_url: @auth_url,
-                      openstack_username: @auth_user,
-                      openstack_project_name: @project_name,
-                      openstack_domain_name: @domain_name,
-                      openstack_api_key: @auth_api_key,
-                      openstack_region: @auth_region)
+        @storage = Fog::Storage.new(
+          provider: 'OpenStack',
+          openstack_auth_url: @auth_url,
+          openstack_username: @auth_user,
+          openstack_api_key: @auth_api_key,
+          openstack_tenant: @auth_tenant,
+          openstack_project_name: @project_name,
+          openstack_domain_name: @domain_name,
+          openstack_region: @auth_region
+        )
 #      rescue Fog::OpenStack::Storage::NotFound
         # ignore NoSuchBucket Error because ensure_bucket checks it.
       rescue => e

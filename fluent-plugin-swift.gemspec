@@ -24,6 +24,6 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency "bundler", "~> 1.14"
   gem.add_development_dependency "rake", "~> 12.0"
   gem.add_development_dependency "test-unit", ">= 3.1.0"
-# fog
+  # fog
   gem.add_dependency("xmlrpc") if RUBY_VERSION.to_s >= "2.4"
 end
