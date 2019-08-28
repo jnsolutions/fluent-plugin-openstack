@@ -3,9 +3,9 @@
 $LOAD_PATH.push File.expand_path('lib', __dir__)
 
 Gem::Specification.new do |gem|
-  gem.name        = 'fluent-plugin-swift'
+  gem.name        = 'fluent-plugin-openstack'
   gem.description = 'OpenStack Storage Service (Swift) plugin for Fluentd'
-  gem.homepage    = 'https://github.com/jnsolutions/fluent-plugin-swift'
+  gem.homepage    = 'https://github.com/jnsolutions/fluent-plugin-openstack'
   gem.summary     = gem.description
   gem.version     = File.read('VERSION').strip
   gem.license     = 'MIT'
