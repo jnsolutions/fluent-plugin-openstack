@@ -11,8 +11,7 @@ Gem::Specification.new do |gem|
   gem.license     = 'Apache-2.0'
   gem.authors     = ['yuuzi41']
   gem.email       = ''
-  # gem.has_rdoc    = false
-  # gem.platform    = Gem::Platform::RUBY
+  gem.platform    = Gem::Platform::RUBY
   gem.files       = `git ls-files`.split("\n")
   gem.test_files  = `git ls-files -- {test,spec,features}/*`.split("\n")
   gem.executables = `git ls-files -- bin/*`.split("\n").map { |f| File.basename(f) }
@@ -21,7 +20,7 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency 'fluentd', ['>= 0.14.2', '< 2']
   gem.add_runtime_dependency 'fog-openstack'
   gem.add_runtime_dependency 'uuidtools'
-  gem.add_development_dependency 'bundler', '~> 1.14'
+  gem.add_development_dependency 'bundler', '~> 2.0.2'
   gem.add_development_dependency 'flexmock', '>= 1.2.0'
   gem.add_development_dependency 'rake', '~> 12.0'
   gem.add_development_dependency 'test-unit', '>= 3.1.0'
