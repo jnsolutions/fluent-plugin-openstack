@@ -164,9 +164,12 @@ module Fluent::Plugin
         }
         values_for_swift_object_key_post = {
           '%{time_slice}' => time_slice,
-          '%{index}' => format(index_format, i)
+          '%{index}' => sprintf(index_format, i)
         }.merge!(values_for_swift_object_chunk[chunk.unique_id])
-        values_for_swift_object_key_post['%{uuid_flush}'] = uuid_random if uuid_flush_enabled
+
+        if uuid_flush_enabled
+          values_for_swift_object_key_post['%{uuid_flush}'] = uuid_random
+        end
 
         swift_path = swift_object_key_format.gsub(/%{[^}]+}/) do |matched_key|
           values_for_swift_object_key_pre.fetch(matched_key, matched_key)
