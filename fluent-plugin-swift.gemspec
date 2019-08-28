@@ -4,13 +4,13 @@ $LOAD_PATH.push File.expand_path('lib', __dir__)
 
 Gem::Specification.new do |gem|
   gem.name        = 'fluent-plugin-swift'
-  gem.description = 'OpenStack Storage Service (Swift) output plugin for Fluentd event collector'
+  gem.description = 'OpenStack Storage Service (Swift) plugin for Fluentd'
   gem.homepage    = 'https://github.com/jnsolutions/fluent-plugin-swift'
   gem.summary     = gem.description
   gem.version     = File.read('VERSION').strip
-  gem.license     = 'Apache-2.0'
-  gem.authors     = ['yuuzi41', 'brissenden']
-  gem.email       = ''
+  gem.license     = 'MIT'
+  gem.authors     = ['brissenden']
+  gem.email       = 'robert.krzysztoforski@protonmail.com'
   gem.platform    = Gem::Platform::RUBY
   gem.files       = `git ls-files`.split("\n")
   gem.test_files  = `git ls-files -- {test,spec,features}/*`.split("\n")
