@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'fluent/plugin/output'
 require 'fluent/timezone'
 require 'fog/openstack'
@@ -17,13 +19,13 @@ module Fluent::Plugin
       @uuid_flush_enabled = false
     end
 
-    desc "Path prefix of the files on Swift"
-    config_param :path, :string, :default => ""
+    desc 'Path prefix of the files on Swift'
+    config_param :path, :string, default: ''
     # openstack auth
     desc "Authentication URL. set a value or `#{ENV['OS_AUTH_URL']}`"
-    config_param :auth_url,      :string
+    config_param :auth_url, :string
     desc "Authentication User Name. if you use TempAuth, auth_user is ACCOUNT:USER .set a value or `#{ENV['OS_USERNAME']}`"
-    config_param :auth_user,     :string
+    config_param :auth_user, :string
     desc "Authentication Key (Password). set a value or `#{ENV['OS_PASSWORD']}`"
     config_param :auth_api_key,  :string
     # identity v2
@@ -37,27 +39,27 @@ module Fluent::Plugin
     config_param :auth_region,   :string, default: nil
     config_param :swift_account, :string, default: nil
 
-    desc "Swift container name"
+    desc 'Swift container name'
     config_param :swift_container, :string
-    desc "Archive format on Swift"
-    config_param :store_as, :string, :default => "gzip"
-    desc "If false, the certificate of endpoint will not be verified"
-    config_param :ssl_verify, :bool, :default => true
-    desc "The format of Swift object keys"
-    config_param :swift_object_key_format, :string, :default => "%{path}%{time_slice}_%{index}.%{file_extension}"
-    desc "Create Swift container if it does not exists"
-    config_param :auto_create_container, :bool, :default => true
-    config_param :check_apikey_on_start, :bool, :default => true
-    desc "URI of proxy environment"
-    config_param :proxy_uri, :string, :default => nil
-    desc "The length of `%{hex_random}` placeholder(4-16)"
+    desc 'Archive format on Swift'
+    config_param :store_as, :string, default: 'gzip'
+    desc 'If false, the certificate of endpoint will not be verified'
+    config_param :ssl_verify, :bool, default: true
+    desc 'The format of Swift object keys'
+    config_param :swift_object_key_format, :string, default: '%{path}%{time_slice}_%{index}.%{file_extension}'
+    desc 'Create Swift container if it does not exists'
+    config_param :auto_create_container, :bool, default: true
+    config_param :check_apikey_on_start, :bool, default: true
+    desc 'URI of proxy environment'
+    config_param :proxy_uri, :string, default: nil
+    desc 'The length of `%{hex_random}` placeholder(4-16)'
     config_param :hex_random_length, :integer, default: 4
-    desc "`sprintf` format for `%{index}`"
-    config_param :index_format, :string, default: "%d"
-    desc "Overwrite already existing path"
+    desc '`sprintf` format for `%{index}`'
+    config_param :index_format, :string, default: '%d'
+    desc 'Overwrite already existing path'
     config_param :overwrite, :bool, default: false
 
-    DEFAULT_FORMAT_TYPE = "out_file"
+    DEFAULT_FORMAT_TYPE = 'out_file'
 
     config_section :format do
       config_set_default :@type, DEFAULT_FORMAT_TYPE
@@ -68,7 +70,7 @@ module Fluent::Plugin
       config_set_default :timekey, (60 * 60 * 24)
     end
 
-#    attr_reader :storage
+    #    attr_reader :storage
 
     MAX_HEX_RANDOM_LENGTH = 16
 
@@ -77,35 +79,35 @@ module Fluent::Plugin
 
       super
 
-    if @auth_url.empty?
-     raise Fluent::ConfigError, "auth_url parameter or OS_AUTH_URL variable not defined"
-    end
-    if @auth_user.empty?
-     raise Fluent::ConfigError, "auth_user parameter or OS_USERNAME variable not defined"
-    end
-    if @auth_api_key.empty?
-     raise Fluent::ConfigError, "auth_api_key parameter or OS_PASSWORD variable not defined"
-    end
+      if @auth_url.empty?
+        raise Fluent::ConfigError, 'auth_url parameter or OS_AUTH_URL variable not defined'
+      end
+      if @auth_user.empty?
+        raise Fluent::ConfigError, 'auth_user parameter or OS_USERNAME variable not defined'
+      end
+      if @auth_api_key.empty?
+        raise Fluent::ConfigError, 'auth_api_key parameter or OS_PASSWORD variable not defined'
+      end
 
-    if @project_name.empty?
-     raise Fluent::ConfigError, "project_name parameter or OS_PROJECT_NAME variable not defined"
-    end
-    if @domain_name.empty?
-     raise Fluent::ConfigError, "domain_name parameter or OS_PROJECT_DOMAIN_NAME variable not defined"
-    end
+      if @project_name.empty?
+        raise Fluent::ConfigError, 'project_name parameter or OS_PROJECT_NAME variable not defined'
+      end
+      if @domain_name.empty?
+        raise Fluent::ConfigError, 'domain_name parameter or OS_PROJECT_DOMAIN_NAME variable not defined'
+      end
 
-    @ext, @mime_type = case @store_as
-      when 'gzip' then ['gz', 'application/x-gzip']
-      when 'lzo' then
-        begin
-          Open3.capture3('lzop -V')
-        rescue Errno::ENOENT
-          raise ConfigError, "'lzop' utility must be in PATH for LZO compression"
-        end
-        ['lzo', 'application/x-lzop']
-      when 'json' then ['json', 'application/json']
-      else ['txt', 'text/plain']
-    end
+      @ext, @mime_type = case @store_as
+                         when 'gzip' then ['gz', 'application/x-gzip']
+                         when 'lzo' then
+                           begin
+                             Open3.capture3('lzop -V')
+                           rescue Errno::ENOENT
+                             raise ConfigError, "'lzop' utility must be in PATH for LZO compression"
+                           end
+                           ['lzo', 'application/x-lzop']
+                         when 'json' then ['json', 'application/json']
+                         else ['txt', 'text/plain']
+      end
 
       @formatter = formatter_create
 
@@ -114,7 +116,7 @@ module Fluent::Plugin
       end
 
       unless @index_format =~ /^%(0\d*)?[dxX]$/
-        raise Fluent::ConfigError, "index_format parameter should follow `%[flags][width]type`. `0` is the only supported flag, and is mandatory if width is specified. `d`, `x` and `X` are supported types" 
+        raise Fluent::ConfigError, 'index_format parameter should follow `%[flags][width]type`. `0` is the only supported flag, and is mandatory if width is specified. `d`, `x` and `X` are supported types'
       end
 
       @swift_object_key_format = process_swift_object_key_format
@@ -130,7 +132,6 @@ module Fluent::Plugin
     end
 
     def start
-
       Excon.defaults[:ssl_verify_peer] = @ssl_verify
 
       begin
@@ -144,9 +145,9 @@ module Fluent::Plugin
           openstack_domain_name: @domain_name,
           openstack_region: @auth_region
         )
-#      rescue Fog::OpenStack::Storage::NotFound
+        #      rescue Fog::OpenStack::Storage::NotFound
         # ignore NoSuchBucket Error because ensure_bucket checks it.
-      rescue => e
+      rescue StandardError => e
         raise "can't call Swift API. Please check your ENV OS_*, your credentials or auth_url configuration. error = #{e.inspect}"
       end
 
@@ -167,55 +168,53 @@ module Fluent::Plugin
       metadata = chunk.metadata
       previous_path = nil
       time_slice = if metadata.timekey.nil?
-                     ''.freeze
+                     ''
                    else
                      @time_slice_with_tz.call(metadata.timekey)
                    end
 
       begin
         @values_for_swift_object_chunk[chunk.unique_id] ||= {
-            "%{hex_random}" => hex_random(chunk),
+          '%{hex_random}' => hex_random(chunk)
         }
         values_for_swift_object_key_pre = {
-          "%{path}" => @path,
-          "%{file_extension}" => @ext,
+          '%{path}' => @path,
+          '%{file_extension}' => @ext
         }
         values_for_swift_object_key_post = {
-          "%{time_slice}" => time_slice,
-          "%{index}" => sprintf(@index_format,i),
+          '%{time_slice}' => time_slice,
+          '%{index}' => format(@index_format, i)
         }.merge!(@values_for_swift_object_chunk[chunk.unique_id])
-          values_for_swift_object_key_post["%{uuid_flush}".freeze] = uuid_random if @uuid_flush_enabled
+        values_for_swift_object_key_post['%{uuid_flush}'] = uuid_random if @uuid_flush_enabled
 
-        swift_path = @swift_object_key_format.gsub(%r(%{[^}]+})) do |matched_key|
-            values_for_swift_object_key_pre.fetch(matched_key, matched_key)
+        swift_path = @swift_object_key_format.gsub(/%{[^}]+}/) do |matched_key|
+          values_for_swift_object_key_pre.fetch(matched_key, matched_key)
+        end
+
+        swift_path = extract_placeholders(swift_path, metadata)
+        swift_path = swift_path.gsub(/%{[^}]+}/, values_for_swift_object_key_post)
+        if (i > 0) && (swift_path == previous_path)
+          if @overwrite
+            log.warn "#{swift_path} already exists, but will overwrite"
+            break
+          else
+            raise "duplicated path is generated. use %{index} in swift_object_key_format: path = #{swift_path}"
           end
-
-          swift_path = extract_placeholders(swift_path, metadata)
-          swift_path = swift_path.gsub(%r(%{[^}]+}), values_for_swift_object_key_post)
-          if (i > 0) && (swift_path == previous_path)
-            if @overwrite
-              log.warn "#{swift_path} already exists, but will overwrite"
-              break
-            else
-              raise "duplicated path is generated. use %{index} in swift_object_key_format: path = #{swift_path}"
-            end
-          end
-
+        end
 
         i += 1
         previous_path = swift_path
       end while check_object_exists(@swift_container, swift_path)
 
-
-      tmp = Tempfile.new("swift-")
+      tmp = Tempfile.new('swift-')
       tmp.binmode
       begin
-        if @store_as == "gzip"
+        if @store_as == 'gzip'
           w = Zlib::GzipWriter.new(tmp)
           chunk.write_to(w)
           w.close
-        elsif @store_as == "lzo"
-          w = Tempfile.new("chunk-tmp")
+        elsif @store_as == 'lzo'
+          w = Tempfile.new('chunk-tmp')
           chunk.write_to(w)
           w.close
           tmp.close
@@ -226,15 +225,27 @@ module Fluent::Plugin
           tmp.close
         end
         File.open(tmp.path) do |file|
-          @storage.put_object(@swift_container, swift_path, file, {:content_type => @mime_type})
-        @values_for_swift_object_chunk.delete(chunk.unique_id)
+          @storage.put_object(@swift_container, swift_path, file, content_type: @mime_type)
+          @values_for_swift_object_chunk.delete(chunk.unique_id)
         end
-        # log.debu "out_swift: write chunk #{dump_unique_id_hex(chunk.unique_id)} with metadata #{chunk.metadata} to swift://#{@swift_container}/#{swift_path}"
-#        $log.info "out_swift: Put Log to Swift. container=#{@swift_container} object=#{swift_path}"
+      # log.debu "out_swift: write chunk #{dump_unique_id_hex(chunk.unique_id)} with metadata #{chunk.metadata} to swift://#{@swift_container}/#{swift_path}"
+      #        $log.info "out_swift: Put Log to Swift. container=#{@swift_container} object=#{swift_path}"
       ensure
-        tmp.close(true) rescue nil
-        w.close rescue nil
-        w.unlink rescue nil
+        begin
+          tmp.close(true)
+        rescue StandardError
+          nil
+        end
+        begin
+          w.close
+        rescue StandardError
+          nil
+        end
+        begin
+          w.unlink
+        rescue StandardError
+          nil
+        end
       end
     end
 
@@ -256,50 +267,48 @@ module Fluent::Plugin
       when nil          then ''
       when 0...60       then '%Y%m%d%H%M%S' # 60 exclusive
       when 60...3600    then '%Y%m%d%H%M'
-      when 3600...86400 then '%Y%m%d%H'
-      else                   '%Y%m%d'
+      when 3600...86_400 then '%Y%m%d%H'
+      else '%Y%m%d'
       end
     end
 
     def check_container
-      begin
-        @storage.get_container(@swift_container)
-      rescue Fog::OpenStack::Storage::NotFound
-        if @auto_create_container
-          $log.info "Creating container #{@swift_container} on #{@auth_url}, #{@swift_account}"
-          @storage.put_container(@swift_container)
-        else
-          raise "The specified container does not exist: container = #{swift_container}"
-        end
+      @storage.get_container(@swift_container)
+    rescue Fog::OpenStack::Storage::NotFound
+      if @auto_create_container
+        $log.info "Creating container #{@swift_container} on #{@auth_url}, #{@swift_account}"
+        @storage.put_container(@swift_container)
+      else
+        raise "The specified container does not exist: container = #{swift_container}"
       end
     end
 
     def process_swift_object_key_format
-      %W(%{uuid} %{uuid:random} %{uuid:hostname} %{uuid:timestamp}).each { |ph|
+      %w[%{uuid} %{uuid:random} %{uuid:hostname} %{uuid:timestamp}].each do |ph|
         if @swift_object_key_format.include?(ph)
-          raise Fluent::ConfigError, %!#{ph} placeholder in swift_object_key_format is removed!
+          raise Fluent::ConfigError, %(#{ph} placeholder in swift_object_key_format is removed)
         end
-      }
+      end
 
       if @swift_object_key_format.include?('%{uuid_flush}')
         # test uuidtools works or not
         begin
           require 'uuidtools'
         rescue LoadError
-          raise Fluent::ConfigError, "uuidtools gem not found. Install uuidtools gem first"
+          raise Fluent::ConfigError, 'uuidtools gem not found. Install uuidtools gem first'
         end
         begin
           uuid_random
-        rescue => e
+        rescue StandardError => e
           raise Fluent::ConfigError, "Generating uuid doesn't work. Can't use %{uuid_flush} on this environment. #{e}"
         end
         @uuid_flush_enabled = true
       end
 
-      @swift_object_key_format.gsub('%{hostname}') { |expr|
+      @swift_object_key_format.gsub('%{hostname}') do |_expr|
         log.warn "%{hostname} will be removed in the future. Use \"\#{Socket.gethostname}\" instead"
         Socket.gethostname
-      }
+      end
     end
 
     def check_object_exists(container, object)
@@ -308,8 +317,7 @@ module Fluent::Plugin
       rescue Fog::OpenStack::Storage::NotFound
         return false
       end
-      return true
+      true
     end
-
   end
 end

@@ -1,5 +1,7 @@
-require "helper"
-require "fluent/plugin/out_swift"
+# frozen_string_literal: true
+
+require 'helper'
+require 'fluent/plugin/out_swift'
 
 class SwiftOutputTest < Test::Unit::TestCase
   setup do
@@ -7,21 +9,21 @@ class SwiftOutputTest < Test::Unit::TestCase
   end
 
   def teardown
-    Dir.glob('test/tmp/*').each {|file| FileUtils.rm_f(file) }
+    Dir.glob('test/tmp/*').each { |file| FileUtils.rm_f(file) }
   end
 
-  CONFIG_NONE = %[
+  CONFIG_NONE = %(
     swift_container CONTAINER_NAME
-  ]
+  )
 
-  CONFIG_ENV = %[
+  CONFIG_ENV = %(
     swift_container CONTAINER_NAME
     auth_url "#{ENV['EMPTY_OS_AUTH_URL']}"
     auth_user test:tester
     auth_api_key testing
-  ]
+  )
 
-  CONFIG = %[
+  CONFIG = %(
     auth_url https://127.0.0.1/auth/v3
     auth_user test:tester
     auth_api_key testing
@@ -37,7 +39,7 @@ class SwiftOutputTest < Test::Unit::TestCase
     time_slice_format %Y%m%d-%H
     time_slice_wait 10m
     utc
-  ]
+  )
 
   def create_driver(conf = CONFIG)
     Fluent::Test::Driver::Output.new(Fluent::Plugin::SwiftOutput) do
@@ -51,8 +53,7 @@ class SwiftOutputTest < Test::Unit::TestCase
 
       private
 
-      def check_container
-      end
+      def check_container; end
     end.configure(conf)
   end
 
@@ -76,5 +77,4 @@ class SwiftOutputTest < Test::Unit::TestCase
     assert_equal 'CONTAINER_NAME', d.instance.swift_container
     assert_equal 'logs/', d.instance.path
   end
-
 end
