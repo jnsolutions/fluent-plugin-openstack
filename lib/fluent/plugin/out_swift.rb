@@ -137,9 +137,7 @@ module Fluent::Plugin
       super
     end
 
-    # TODO: dead method?
     def format(tag, time, record)
-      log.warn 'Method: `format(tag, time, record)` is NOT dead!'
       r = inject_values_to_record(tag, time, record)
       formatter.format(tag, time, r)
     end
