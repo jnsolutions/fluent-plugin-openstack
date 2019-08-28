@@ -17,13 +17,13 @@ Gem::Specification.new do |gem|
   gem.executables = `git ls-files -- bin/*`.split("\n").map { |f| File.basename(f) }
   gem.require_paths = ['lib']
 
-  gem.add_runtime_dependency 'fluentd'
-  gem.add_runtime_dependency 'fog-openstack'
-  gem.add_runtime_dependency 'uuidtools'
-  gem.add_runtime_dependency 'xmlrpc'
+  gem.add_runtime_dependency 'fluentd', '~> 1.7'
+  gem.add_runtime_dependency 'fog-openstack', '~> 1.0'
+  gem.add_runtime_dependency 'uuidtools', '~> 2.1'
+  gem.add_runtime_dependency 'xmlrpc', '~> 0.3'
 
-  gem.add_development_dependency 'bundler'
-  gem.add_development_dependency 'flexmock'
-  gem.add_development_dependency 'rake'
-  gem.add_development_dependency 'test-unit'
+  gem.add_development_dependency 'bundler', '~> 2.0'
+  gem.add_development_dependency 'flexmock', '~> 2.3'
+  gem.add_development_dependency 'rake', '~> 12.3'
+  gem.add_development_dependency 'test-unit', '~> 3.3'
 end
