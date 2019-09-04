@@ -130,7 +130,7 @@ module Fluent::Plugin
           openstack_region: auth_region
         )
       rescue StandardError => e
-        raise "Can't call Swift API. Please check your ENV OS_*, your credentials or auth_url configuration. Error: #{e.inspect}"
+        raise "Can't call Swift API. Please check your ENV OS_*, your credentials or `auth_url` configuration. Error: #{e.inspect}"
       end
       storage.change_account(swift_account) if swift_account
       check_container
@@ -138,8 +138,8 @@ module Fluent::Plugin
     end
 
     def format(tag, time, record)
-      r = inject_values_to_record(tag, time, record)
-      formatter.format(tag, time, r)
+      new_record = inject_values_to_record(tag, time, record)
+      formatter.format(tag, time, new_record)
     end
 
     def write(chunk)
@@ -191,6 +191,7 @@ module Fluent::Plugin
         swift_path = swift_path.gsub(/%{[^}]+}/, values_for_swift_object_key_post)
 
         $log.warn("swift_path 3: #{swift_path}")
+
         if i.positive? && (swift_path == previous_path)
           if overwrite
             log.warn("File: #{swift_path} already exists, but will overwrite!")
