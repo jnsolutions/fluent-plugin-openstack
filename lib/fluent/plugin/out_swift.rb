@@ -152,7 +152,8 @@ module Fluent::Plugin
                    end
 
       begin
-        puts("time_slice: #{time_slice}")
+        $stdout.write("stdout time_slice: #{time_slice}")
+        puts("puts time_slice: #{time_slice}")
         $log.warn("time_slice: #{time_slice}")
         $log.warn("index_format: #{index_format}")
 
