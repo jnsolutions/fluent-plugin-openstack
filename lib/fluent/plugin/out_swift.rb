@@ -16,7 +16,7 @@ module Fluent::Plugin
     MAX_HEX_RANDOM_LENGTH = 16
 
     desc 'Path prefix of the files on Swift'
-    config_param :path, :string, default: ''
+    config_param :path, :string, default: '%Y%m%d'
     # OpenStack AUTH
     desc "Authentication URL. Set a value or `#{ENV['OS_AUTH_URL']}`"
     config_param :auth_url, :string
@@ -36,13 +36,13 @@ module Fluent::Plugin
     desc 'If false, the certificate of endpoint will not be verified'
     config_param :ssl_verify, :bool, default: true
     desc 'The format of Swift object keys'
-    config_param :swift_object_key_format, :string, default: '%{path}%{time_slice}_%{index}.%{file_extension}'
+    config_param :swift_object_key_format, :string, default: '%{path}/%{time_slice}_%{index}.%{file_extension}'
     desc 'Create Swift container if it does not exists'
     config_param :auto_create_container, :bool, default: true
     config_param :check_apikey_on_start, :bool, default: true
     desc 'URI of proxy environment'
     config_param :proxy_uri, :string, default: nil
-    desc 'The length of `%{hex_random}` placeholder(4-16)'
+    desc 'The length of `%{hex_random}` placeholder (4 - 16)'
     config_param :hex_random_length, :integer, default: 4
     desc '`sprintf` format for `%{index}`'
     config_param :index_format, :string, default: '%d'
@@ -70,6 +70,8 @@ module Fluent::Plugin
 
       super
 
+      $log.info("config: #{config}")
+
       if auth_url.empty?
         raise Fluent::ConfigError, 'auth_url parameter or OS_AUTH_URL variable not defined'
       end
@@ -78,6 +80,14 @@ module Fluent::Plugin
       end
       if auth_api_key.empty?
         raise Fluent::ConfigError, 'auth_api_key parameter or OS_PASSWORD variable not defined'
+      end
+
+      if hex_random_length > MAX_HEX_RANDOM_LENGTH
+        raise Fluent::ConfigError, "hex_random_length parameter must be less than or equal to #{MAX_HEX_RANDOM_LENGTH}"
+      end
+
+      unless index_format =~ /^%(0\d*)?[dxX]$/
+        raise Fluent::ConfigError, 'index_format parameter should follow `%[flags][width]type`. `0` is the only supported flag, and is mandatory if width is specified. `d`, `x` and `X` are supported types'
       end
 
       self.ext, self.mime_type = case store_as
@@ -91,23 +101,14 @@ module Fluent::Plugin
                                    ['lzo', 'application/x-lzop']
                                  when 'json' then ['json', 'application/json']
                                  else ['txt', 'text/plain']
-      end
+                                 end
 
       self.formatter = formatter_create
-
-      if hex_random_length > MAX_HEX_RANDOM_LENGTH
-        raise Fluent::ConfigError, "hex_random_length parameter must be less than or equal to #{MAX_HEX_RANDOM_LENGTH}"
-      end
-
-      unless index_format =~ /^%(0\d*)?[dxX]$/
-        raise Fluent::ConfigError, 'index_format parameter should follow `%[flags][width]type`. `0` is the only supported flag, and is mandatory if width is specified. `d`, `x` and `X` are supported types'
-      end
-
       self.swift_object_key_format = configure_swift_object_key_format
       # For backward compatibility
       # TODO: Remove time_slice_format when end of support compat_parameters
       self.values_for_swift_object_chunk = {}
-      self.time_slice_with_tz = Fluent::Timezone.formatter(timekey_zone, config['time_slice_format'] || timekey_to_timeformat(timekey: buffer_config['timekey']))
+      self.time_slice_with_tz = Fluent::Timezone.formatter(timekey_zone, config['time_slice_format'])
     end
 
     def multi_workers_ready?
@@ -145,10 +146,15 @@ module Fluent::Plugin
       time_slice = if metadata.timekey.nil?
                      ''
                    else
+                     $log.info("timekey: #{metadata.timekey}")
+                     $log.info("metadata: #{metadata}")
                      time_slice_with_tz.call(metadata.timekey)
                    end
 
       begin
+        $log.info("time_slice: #{time_slice}")
+        $log.info("index_format: #{index_format}")
+
         values_for_swift_object_chunk[chunk.unique_id] ||= {
           '%{hex_random}' => hex_random(chunk: chunk)
         }
@@ -158,8 +164,10 @@ module Fluent::Plugin
         }
         values_for_swift_object_key_post = {
           '%{time_slice}' => time_slice,
-          '%{index}' => sprintf(index_format, i)
+          '%{index}' => format(index_format, i)
         }.merge!(values_for_swift_object_chunk[chunk.unique_id])
+
+        $log.info("values_for_swift_object_key_post: #{values_for_swift_object_key_post}")
 
         if uuid_flush_enabled
           values_for_swift_object_key_post['%{uuid_flush}'] = uuid_random
@@ -169,11 +177,18 @@ module Fluent::Plugin
           values_for_swift_object_key_pre.fetch(matched_key, matched_key)
         end
 
+        $log.info("swift_path 1: #{swift_path}")
+
         swift_path = extract_placeholders(swift_path, metadata)
+
+        $log.info("swift_path 2: #{swift_path}")
+
         swift_path = swift_path.gsub(/%{[^}]+}/, values_for_swift_object_key_post)
+
+        $log.info("swift_path 3: #{swift_path}")
         if i.positive? && (swift_path == previous_path)
           if overwrite
-            log.warn "File: #{swift_path} already exists, but will overwrite!"
+            log.warn("File: #{swift_path} already exists, but will overwrite!")
             break
           else
             raise "Duplicated path is generated. Use %{index} in swift_object_key_format: Path: #{swift_path}"
@@ -202,7 +217,12 @@ module Fluent::Plugin
           tmp.close
         end
         File.open(tmp.path) do |file|
-          storage.put_object(swift_container, swift_path, file, content_type: mime_type)
+          storage.put_object(
+            swift_container,
+            swift_path,
+            file,
+            content_type: mime_type
+          )
           values_for_swift_object_chunk.delete(chunk.unique_id)
         end
       ensure
@@ -226,7 +246,13 @@ module Fluent::Plugin
 
     private
 
-    attr_accessor :uuid_flush_enabled, :storage, :ext, :mime_type, :formatter, :values_for_swift_object_chunk, :time_slice_with_tz
+    attr_accessor :uuid_flush_enabled,
+                  :storage,
+                  :ext,
+                  :mime_type,
+                  :formatter,
+                  :values_for_swift_object_chunk,
+                  :time_slice_with_tz
 
     def hex_random(chunk:)
       unique_hex = Fluent::UniqueId.hex(chunk.unique_id)
@@ -238,25 +264,14 @@ module Fluent::Plugin
       ::UUIDTools::UUID.random_create.to_s
     end
 
-    # This is stolen from Fluentd
-    def timekey_to_timeformat(timekey:)
-      case timekey
-      when nil          then ''
-      when 0...60       then '%Y%m%d%H%M%S'
-      when 60...3600    then '%Y%m%d%H%M'
-      when 3600...86_400 then '%Y%m%d%H'
-      else '%Y%m%d'
-      end
-    end
-
     def check_container
       storage.get_container(swift_container)
     rescue Fog::OpenStack::Storage::NotFound
       if auto_create_container
-        $log.info "Creating container #{swift_container} on #{auth_url}, #{swift_account}"
+        $log.info("Creating container `#{swift_container}` on `#{auth_url}`, `#{swift_account}`.")
         storage.put_container(swift_container)
       else
-        raise "The specified container does not exist: container = #{swift_container}"
+        raise "The specified container does not exist: #{swift_container}."
       end
     end
 
@@ -282,7 +297,7 @@ module Fluent::Plugin
       end
 
       swift_object_key_format.gsub('%{hostname}') do |_expr|
-        log.warn "%{hostname} will be removed in the future. Use \"\#{Socket.gethostname}\" instead"
+        log.warn("%{hostname} will be removed in the future. Use `#{Socket.gethostname}` instead.")
         Socket.gethostname
       end
     end
