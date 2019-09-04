@@ -108,6 +108,9 @@ module Fluent::Plugin
       # For backward compatibility
       # TODO: Remove time_slice_format when end of support compat_parameters
       self.values_for_swift_object_chunk = {}
+
+      $log.warn("timekey_zone: #{timekey_zone}")
+
       self.time_slice_with_tz = Fluent::Timezone.formatter(timekey_zone, config['time_slice_format'])
     end
 
@@ -152,8 +155,6 @@ module Fluent::Plugin
                    end
 
       begin
-        $stdout.write("stdout time_slice: #{time_slice}")
-        puts("puts time_slice: #{time_slice}")
         $log.warn("time_slice: #{time_slice}")
         $log.warn("index_format: #{index_format}")
 
@@ -164,10 +165,12 @@ module Fluent::Plugin
           '%{path}' => path,
           '%{file_extension}' => ext
         }
+        # rubocop:disable Style/FormatString
         values_for_swift_object_key_post = {
           '%{time_slice}' => time_slice,
-          '%{index}' => format(index_format, i)
+          '%{index}' => sprintf(index_format, i)
         }.merge!(values_for_swift_object_chunk[chunk.unique_id])
+        # rubocop:enable Style/FormatString
 
         $log.warn("values_for_swift_object_key_post: #{values_for_swift_object_key_post}")
 
