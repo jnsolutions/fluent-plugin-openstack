@@ -70,7 +70,7 @@ module Fluent::Plugin
 
       super
 
-      $log.info("config: #{config}")
+      $log.warn("config: #{config}")
 
       if auth_url.empty?
         raise Fluent::ConfigError, 'auth_url parameter or OS_AUTH_URL variable not defined'
@@ -146,14 +146,15 @@ module Fluent::Plugin
       time_slice = if metadata.timekey.nil?
                      ''
                    else
-                     $log.info("timekey: #{metadata.timekey}")
-                     $log.info("metadata: #{metadata}")
+                     $log.warn("timekey: #{metadata.timekey}")
+                     $log.warn("metadata: #{metadata}")
                      time_slice_with_tz.call(metadata.timekey)
                    end
 
       begin
-        $log.info("time_slice: #{time_slice}")
-        $log.info("index_format: #{index_format}")
+        puts("time_slice: #{time_slice}")
+        $log.warn("time_slice: #{time_slice}")
+        $log.warn("index_format: #{index_format}")
 
         values_for_swift_object_chunk[chunk.unique_id] ||= {
           '%{hex_random}' => hex_random(chunk: chunk)
@@ -167,7 +168,7 @@ module Fluent::Plugin
           '%{index}' => format(index_format, i)
         }.merge!(values_for_swift_object_chunk[chunk.unique_id])
 
-        $log.info("values_for_swift_object_key_post: #{values_for_swift_object_key_post}")
+        $log.warn("values_for_swift_object_key_post: #{values_for_swift_object_key_post}")
 
         if uuid_flush_enabled
           values_for_swift_object_key_post['%{uuid_flush}'] = uuid_random
@@ -177,15 +178,15 @@ module Fluent::Plugin
           values_for_swift_object_key_pre.fetch(matched_key, matched_key)
         end
 
-        $log.info("swift_path 1: #{swift_path}")
+        $log.warn("swift_path 1: #{swift_path}")
 
         swift_path = extract_placeholders(swift_path, metadata)
 
-        $log.info("swift_path 2: #{swift_path}")
+        $log.warn("swift_path 2: #{swift_path}")
 
         swift_path = swift_path.gsub(/%{[^}]+}/, values_for_swift_object_key_post)
 
-        $log.info("swift_path 3: #{swift_path}")
+        $log.warn("swift_path 3: #{swift_path}")
         if i.positive? && (swift_path == previous_path)
           if overwrite
             log.warn("File: #{swift_path} already exists, but will overwrite!")
@@ -268,7 +269,7 @@ module Fluent::Plugin
       storage.get_container(swift_container)
     rescue Fog::OpenStack::Storage::NotFound
       if auto_create_container
-        $log.info("Creating container `#{swift_container}` on `#{auth_url}`, `#{swift_account}`.")
+        $log.warn("Creating container `#{swift_container}` on `#{auth_url}`, `#{swift_account}`.")
         storage.put_container(swift_container)
       else
         raise "The specified container does not exist: #{swift_container}."
