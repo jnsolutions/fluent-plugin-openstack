@@ -15,9 +15,9 @@ module Fluent::Plugin
     DEFAULT_FORMAT_TYPE = 'out_file'
     MAX_HEX_RANDOM_LENGTH = 16
 
+    # OpenStack
     desc 'Path prefix of the files on Swift'
     config_param :path, :string, default: '%Y%m%d'
-    # OpenStack AUTH
     desc "Authentication URL. Set a value or `#{ENV['OS_AUTH_URL']}`"
     config_param :auth_url, :string
     desc "Authentication User Name. If you use TempAuth, auth_user is ACCOUNT:USER. Set a value or use `#{ENV['OS_USERNAME']}`"
@@ -28,7 +28,6 @@ module Fluent::Plugin
     desc "Authentication Region. Optional, not required if there is only one region available. Set a value or use `#{ENV['OS_REGION_NAME']}`"
     config_param :auth_region, :string, default: nil
     config_param :swift_account, :string, default: nil
-
     desc 'Swift container name'
     config_param :swift_container, :string
     desc 'Archive format on Swift'
@@ -39,9 +38,6 @@ module Fluent::Plugin
     config_param :swift_object_key_format, :string, default: '%{path}/%H%M_%{index}.%{file_extension}'
     desc 'Create Swift container if it does not exists'
     config_param :auto_create_container, :bool, default: true
-    config_param :check_apikey_on_start, :bool, default: true
-    desc 'URI of proxy environment'
-    config_param :proxy_uri, :string, default: nil
     desc 'The length of `%{hex_random}` placeholder (4 - 16)'
     config_param :hex_random_length, :integer, default: 4
     desc '`sprintf` format for `%{index}`'
@@ -53,6 +49,7 @@ module Fluent::Plugin
       config_set_default :@type, DEFAULT_FORMAT_TYPE
     end
 
+    # https://docs.fluentd.org/configuration/buffer-section#time
     config_section :buffer do
       config_set_default :chunk_keys, ['time']
       config_set_default :timekey, 3600
@@ -104,7 +101,7 @@ module Fluent::Plugin
 
       self.formatter = formatter_create
       self.swift_object_key_format = configure_swift_object_key_format
-      self.values_for_swift_object_chunk = {}
+      self.swift_object_chunk_buffer = {}
     end
 
     def multi_workers_ready?
@@ -125,11 +122,14 @@ module Fluent::Plugin
       rescue StandardError => e
         raise "Can't call Swift API. Please check your ENV OS_*, your credentials or `auth_url` configuration. Error: #{e.inspect}"
       end
-      storage.change_account(swift_account) if swift_account
+      if swift_account
+        storage.change_account(swift_account)
+      end
       check_container
       super
     end
 
+    # https://docs.fluentd.org/plugin-development/api-plugin-formatter
     def format(tag, time, record)
       new_record = inject_values_to_record(tag, time, record)
       formatter.format(tag, time, new_record)
@@ -140,7 +140,7 @@ module Fluent::Plugin
       metadata = chunk.metadata
       previous_path = nil
       begin
-        values_for_swift_object_chunk[chunk.unique_id] ||= {
+        swift_object_chunk_buffer[chunk.unique_id] ||= {
           '%{hex_random}' => hex_random(chunk: chunk)
         }
         values_for_swift_object_key_pre = {
@@ -150,7 +150,7 @@ module Fluent::Plugin
         # rubocop:disable Style/FormatString
         values_for_swift_object_key_post = {
           '%{index}' => sprintf(index_format, i)
-        }.merge!(values_for_swift_object_chunk[chunk.unique_id])
+        }.merge!(swift_object_chunk_buffer[chunk.unique_id])
         # rubocop:enable Style/FormatString
 
         if uuid_flush_enabled
@@ -208,7 +208,7 @@ module Fluent::Plugin
             file,
             content_type: mime_type
           )
-          values_for_swift_object_chunk.delete(chunk.unique_id)
+          swift_object_chunk_buffer.delete(chunk.unique_id)
         end
       ensure
         begin
@@ -236,7 +236,7 @@ module Fluent::Plugin
                   :ext,
                   :mime_type,
                   :formatter,
-                  :values_for_swift_object_chunk
+                  :swift_object_chunk_buffer
 
     def hex_random(chunk:)
       unique_hex = Fluent::UniqueId.hex(chunk.unique_id)
