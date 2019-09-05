@@ -36,7 +36,7 @@ module Fluent::Plugin
     desc 'If false, the certificate of endpoint will not be verified'
     config_param :ssl_verify, :bool, default: true
     desc 'The format of Swift object keys'
-    config_param :swift_object_key_format, :string, default: '%{path}/%Y%m%d_%H%M_%{index}.%{file_extension}'
+    config_param :swift_object_key_format, :string, default: '%{path}/%H%M_%{index}.%{file_extension}'
     desc 'Create Swift container if it does not exists'
     config_param :auto_create_container, :bool, default: true
     config_param :check_apikey_on_start, :bool, default: true
@@ -55,7 +55,8 @@ module Fluent::Plugin
 
     config_section :buffer do
       config_set_default :chunk_keys, ['time']
-      config_set_default :timekey, (60 * 60 * 24)
+      config_set_default :timekey, '1h'
+      config_set_default :timekey_wait, '5m'
     end
 
     helpers :compat_parameters, :formatter, :inject
