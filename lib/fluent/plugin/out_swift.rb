@@ -36,7 +36,7 @@ module Fluent::Plugin
     desc 'If false, the certificate of endpoint will not be verified'
     config_param :ssl_verify, :bool, default: true
     desc 'The format of Swift object keys'
-    config_param :swift_object_key_format, :string, default: '%{path}/%{time_slice}_%{index}.%{file_extension}'
+    config_param :swift_object_key_format, :string, default: '%{path}/%Y%m%d_%H%M_%{index}.%{file_extension}'
     desc 'Create Swift container if it does not exists'
     config_param :auto_create_container, :bool, default: true
     config_param :check_apikey_on_start, :bool, default: true
@@ -105,13 +105,7 @@ module Fluent::Plugin
 
       self.formatter = formatter_create
       self.swift_object_key_format = configure_swift_object_key_format
-      # For backward compatibility
-      # TODO: Remove time_slice_format when end of support compat_parameters
       self.values_for_swift_object_chunk = {}
-
-      $log.warn("timekey_zone: #{timekey_zone}")
-
-      self.time_slice_with_tz = Fluent::Timezone.formatter(timekey_zone, config['time_slice_format'])
     end
 
     def multi_workers_ready?
@@ -146,18 +140,7 @@ module Fluent::Plugin
       i = 0
       metadata = chunk.metadata
       previous_path = nil
-      time_slice = if metadata.timekey.nil?
-                     ''
-                   else
-                     $log.warn("timekey: #{metadata.timekey}")
-                     $log.warn("metadata: #{metadata}")
-                     time_slice_with_tz.call(metadata.timekey)
-                   end
-
       begin
-        $log.warn("time_slice: #{time_slice}")
-        $log.warn("index_format: #{index_format}")
-
         values_for_swift_object_chunk[chunk.unique_id] ||= {
           '%{hex_random}' => hex_random(chunk: chunk)
         }
@@ -167,7 +150,6 @@ module Fluent::Plugin
         }
         # rubocop:disable Style/FormatString
         values_for_swift_object_key_post = {
-          '%{time_slice}' => time_slice,
           '%{index}' => sprintf(index_format, i)
         }.merge!(values_for_swift_object_chunk[chunk.unique_id])
         # rubocop:enable Style/FormatString
@@ -257,8 +239,7 @@ module Fluent::Plugin
                   :ext,
                   :mime_type,
                   :formatter,
-                  :values_for_swift_object_chunk,
-                  :time_slice_with_tz
+                  :values_for_swift_object_chunk
 
     def hex_random(chunk:)
       unique_hex = Fluent::UniqueId.hex(chunk.unique_id)
