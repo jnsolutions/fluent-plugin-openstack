@@ -55,7 +55,7 @@ module Fluent::Plugin
 
     config_section :buffer do
       config_set_default :chunk_keys, ['time']
-      config_set_default :timekey, 60 * 60
+      config_set_default :timekey, 3600
       config_set_default :timekey_wait, 60
     end
 
