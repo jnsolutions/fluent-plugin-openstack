@@ -163,7 +163,7 @@ module Fluent::Plugin
         swift_path = extract_placeholders(swift_path, metadata)
         swift_path = swift_path.gsub(/%{[^}]+}/, values_for_swift_object_key_post)
 
-        $log.warn("File flushing: #{swift_path}")
+        $log.info("File flushing: #{swift_path}")
 
         if i.positive? && (swift_path == previous_path)
           if overwrite
