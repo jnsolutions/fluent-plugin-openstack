@@ -52,7 +52,7 @@ module Fluent::Plugin
     # https://docs.fluentd.org/configuration/buffer-section#time
     config_section :buffer do
       config_set_default :chunk_keys, ['time']
-      config_set_default :timekey, 3600
+      config_set_default :timekey, 300
       config_set_default :timekey_wait, 60
     end
 
