@@ -55,8 +55,8 @@ module Fluent::Plugin
 
     config_section :buffer do
       config_set_default :chunk_keys, ['time']
-      config_set_default :timekey, '1h'
-      config_set_default :timekey_wait, '5m'
+      config_set_default :timekey, 60 * 60
+      config_set_default :timekey_wait, 60
     end
 
     helpers :compat_parameters, :formatter, :inject
@@ -70,8 +70,6 @@ module Fluent::Plugin
       compat_parameters_convert(config, :buffer, :formatter, :inject)
 
       super
-
-      $log.warn("config: #{config}")
 
       if auth_url.empty?
         raise Fluent::ConfigError, 'auth_url parameter or OS_AUTH_URL variable not defined'
@@ -155,8 +153,6 @@ module Fluent::Plugin
         }.merge!(values_for_swift_object_chunk[chunk.unique_id])
         # rubocop:enable Style/FormatString
 
-        $log.warn("values_for_swift_object_key_post: #{values_for_swift_object_key_post}")
-
         if uuid_flush_enabled
           values_for_swift_object_key_post['%{uuid_flush}'] = uuid_random
         end
@@ -165,15 +161,15 @@ module Fluent::Plugin
           values_for_swift_object_key_pre.fetch(matched_key, matched_key)
         end
 
-        $log.warn("swift_path 1: #{swift_path}")
+        $log.warn("swift_path: #{swift_path}")
 
         swift_path = extract_placeholders(swift_path, metadata)
 
-        $log.warn("swift_path 2: #{swift_path}")
+        $log.warn("swift_path: #{swift_path}")
 
         swift_path = swift_path.gsub(/%{[^}]+}/, values_for_swift_object_key_post)
 
-        $log.warn("swift_path 3: #{swift_path}")
+        $log.warn("swift_path: #{swift_path}")
 
         if i.positive? && (swift_path == previous_path)
           if overwrite
